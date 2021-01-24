@@ -1,0 +1,160 @@
+#!/usr/bin/python3
+
+# This script should run in the background on raspberry pi boot
+# The second script should be used to view fan stats and to control the fan
+
+import RPi.GPIO as GPIO
+import subprocess
+import time
+import multiprocessing
+import socket
+# from multiprocessing import shared_memory as shm
+
+FAN_PIN = 12  # pwm pin to which the fan control is connected, CHECK PIN NUMBERINGS CAREFULLY!
+PWM_FREQ = 10  # pwm frequency, change this if the fan makes noise or if the fan misbehaves
+
+ON_THRESHOLD = 65  # temperature above which the fan starts
+OFF_THRESHOLD = 55  # temperature below which the fan stops
+THROTTLE_THRESHOLD = 75  # temperature above which the fan should spin at maximum speed
+
+# the lower limit on the duty cycle on the fan's pwm pin (The fan does not spin below this)
+MIN_PWM = 20
+
+
+SLEEP_INTERVAL = 5  # how often to check for a temperature change (in second)
+
+GPIO.setwarnings(False)  # do not display warnings
+GPIO.setmode(GPIO.BOARD)  # set pin numbering mode
+GPIO.setup(FAN_PIN, GPIO.OUT)  # set fan pin to output
+
+fan = GPIO.PWM(FAN_PIN, PWM_FREQ)  # fan pwm object
+fan_on = False  # a control variable to see if the fan is on or off
+fan_speed = 0  # variable to store the fan speed as % duty cycle
+
+# fan_ctl_speed_Value = shm
+
+
+
+# This function taken from https://howchoo.com/g/ote2mjkzzta/control-raspberry-pi-fan-temperature-python
+
+def get_temp():
+    """Get the core temperature.
+    Run a shell script to get the core temp and parse the output.
+    Raises:
+        RuntimeError: if response cannot be parsed.
+    Returns:
+        float: The core temperature in degrees Celsius.
+    """
+    output = subprocess.run(['vcgencmd', 'measure_temp'], capture_output=True)
+    temp_str = output.stdout.decode()
+    try:
+        return float(temp_str.split('=')[1].split('\'')[0])
+    except (IndexError, ValueError):
+        raise RuntimeError('Could not parse temperature output.')
+
+def handle_server(server, shared_fan_speed, shared_fan_control):
+    while True:
+        # keep listening for incoming connections
+        server.listen()
+        # get client info and message
+        clientsocket,addr = server.accept()
+        # print("Got a connection from %s" % str(addr))
+        request = clientsocket.recv(1024)
+        request = request.decode('ascii')
+        msg = ""
+        if request == "status":
+            msg = "\nPi Fan Control:\n\nFan Active: "
+            if shared_fan_control.value == 1:
+                msg += "Yes"
+            elif shared_fan_control.value == 0:
+                msg += "No"
+            msg+="\nFan State: "
+            if shared_fan_speed.value == 0:
+                msg += "Off"
+            else:
+                msg += "On"
+            msg += "\n"
+            msg += "Fan Speed: "
+            msg += str(shared_fan_speed.value)
+            msg += "%\nCPU Temp:  "
+            msg += str(round(get_temp()))
+            msg += "'C\n"
+            
+        elif request == "toggle":
+            if shared_fan_control.value == 1:
+                shared_fan_control.value = 0
+                msg = "Fan is now Inactive!"
+            elif shared_fan_control.value == 0:
+                shared_fan_control.value = 1
+                msg = "Fan toggled Active!"
+        else:
+            msg = "Error! Invalid command!"
+        
+        clientsocket.send(msg.encode('ascii'))
+        clientsocket.close()
+
+
+if __name__ == '__main__':
+    # Validate the on and off thresholds
+    if OFF_THRESHOLD >= ON_THRESHOLD:
+        raise RuntimeError('OFF_THRESHOLD must be less than ON_THRESHOLD')
+
+    # Initialise Socket Server
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = socket.gethostname()
+    port = 9093
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind((host, port))
+    shared_fan_speed = multiprocessing.Value('i') # shared variable to send fan speed to other thread
+    shared_fan_control = multiprocessing.Value('i') # shared variable to toggle the fan on or off
+    shared_fan_control.value=1 # set to on
+
+    # start process to respond to queries
+    p = multiprocessing.Process(target=handle_server, args=(server, shared_fan_speed, shared_fan_control))
+    p.start()
+
+    # infinite loop to adjust fans
+    while True:
+        temp = get_temp()
+        
+        if shared_fan_control.value == 1: # do all this only if the shared variable is on
+            if temp > THROTTLE_THRESHOLD:  # if the temperature goes above the throttle limit, run fan at full speed
+                if not fan_on:
+                    fan_speed = 100
+                    fan.start(fan_speed)
+                    fan_on = True
+                elif fan_speed != 100:
+                    fan_speed = 100
+                    fan.ChangeDutyCycle(fan_speed)
+
+            elif temp > ON_THRESHOLD:  # if the temperature goes above the ON Threshold, run the fans at a speed proportional to the temperature
+                fan_speed = (temp - OFF_THRESHOLD) / \
+                    (THROTTLE_THRESHOLD - OFF_THRESHOLD)
+                fan_speed *= (100 - MIN_PWM)
+                fan_speed += MIN_PWM
+                fan_speed = round(fan_speed)
+                # fan_ctl_speed_shm.buf[0] = fan_speed # write fan_speed to shared memory
+                # print(fan_speed)
+                if not fan_on:
+                    fan.start(fan_speed)
+                    fan_on = True
+                else:
+                    fan.ChangeDutyCycle(fan_speed)
+
+            elif temp < OFF_THRESHOLD:  # if the temperature dips below the OFF Threshold, turn off the fan completely
+                if fan_on:
+                    fan.stop()
+                    fan_speed = 0
+                    fan_on = False
+
+        elif shared_fan_control.value == 0: # stop the fan if the shared control variable is switched off
+            if fan_on:
+                fan.stop()
+                fan_speed=0
+                fan_on = False
+
+
+        # update shared value
+        shared_fan_speed.value = fan_speed
+        # sleep before sampling the temperature again
+        time.sleep(SLEEP_INTERVAL)

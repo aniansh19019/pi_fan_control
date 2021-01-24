@@ -1,0 +1,28 @@
+#!/usr/bin/python3
+
+
+# script to query for fan speed and to set fan on or off
+import socket
+import sys
+
+def print_help():
+    msg = "Pi Fan Control Utility\nUSAGE:\nfanctl <command>\n\nCOMMANDS:\nstatus(or no command)\t\t\tView Fan Status\ntoggle\t\t\tToggle fan ON or OFF\nhelp\t\t\tView this help\n"
+    print(msg)
+
+if __name__ == "__main__":
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = socket.gethostname()
+    port = 9093
+    client.connect((host, port))
+    if len(sys.argv) == 1:
+        client.send("status".encode('ascii'))
+    elif len(sys.argv) == 2:
+        if sys.argv[1] == "help":
+            print_help()
+        else:
+            client.send(sys.argv[1].encode('ascii'))
+    else:
+        print("Invalid number of arguments!")
+    msg = client.recv(2048)
+    print(msg.decode('ascii'))
+
