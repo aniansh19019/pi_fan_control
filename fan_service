@@ -23,6 +23,8 @@ MIN_PWM = 20
 
 SLEEP_INTERVAL = 5  # how often to check for a temperature change (in second)
 
+PORT = 9099 # change this to the same number in both the scripts if the port clashes with some other port
+
 GPIO.setwarnings(False)  # do not display warnings
 GPIO.setmode(GPIO.BOARD)  # set pin numbering mode
 GPIO.setup(FAN_PIN, GPIO.OUT)  # set fan pin to output
@@ -102,7 +104,7 @@ if __name__ == '__main__':
     # Initialise Socket Server
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     host = socket.gethostname()
-    port = 9093
+    port = PORT
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((host, port))
     shared_fan_speed = multiprocessing.Value('i') # shared variable to send fan speed to other thread
