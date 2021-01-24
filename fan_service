@@ -88,7 +88,7 @@ def handle_server(server, shared_fan_speed, shared_fan_control):
                 msg = "Fan is now Inactive!"
             elif shared_fan_control.value == 0:
                 shared_fan_control.value = 1
-                msg = "Fan toggled Active!"
+                msg = "Fan is now Active!"
         else:
             msg = "Error! Invalid command!"
         
