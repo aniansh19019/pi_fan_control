@@ -11,6 +11,7 @@ In my setup I used pin 12 but you may use any pin and modify the pin number in t
 The transistor is a 2N2222 NPN transistor and the resistor is a 600 Ohm resistor. The fan is a standard 5V cooling fan.
 <br>
 <br>
+
 There are two python scripts present here, `fan_control_script` and `fanctl`. The `fan_control_script` script is responsible for controlling the fan and the `fanctl` script is used to toggle the fan on or off and to query the fan for information such as fan speed. These scripts have been tested on a fresh install of Raspberry Pi OS. Feel free to modify the scripts as per your convenience.
 
 ## Installation
