@@ -10,9 +10,8 @@ In my setup I used pin 12 but you may use any pin and modify the pin number in t
 <br>
 The transistor is a 2N2222 NPN transistor and the resistor is a 600 Ohm resistor. The fan is a standard 5V cooling fan.
 <br>
+<br>
 There are two python scripts present here, `fan_control_script` and `fanctl`. The `fan_control_script` script is responsible for controlling the fan and the `fanctl` script is used to toggle the fan on or off and to query the fan for information such as fan speed. These scripts have been tested on a fresh install of Raspberry Pi OS. Feel free to modify the scripts as per your convenience.
-<br>
-<br>
 
 ## Installation
 You need python3 and git installed on your system (Installed by default on the desktop version of Raspberry Pi OS).
@@ -23,11 +22,10 @@ cd pi_fan_control
 sudo chmod +x install.sh
 ./install.sh
 ```
-<br>
-<br>
 
 ## Usage
 After running the `install.sh` script, the files `fan_control_script` and `fanctl` will be moved to your `/usr/bin` folder and a systemd service is created which makes sure that the fan control script runs on system boot. You can modify the thresholds in the `fan_control_script` file if you feel.
+<br>
 <br>
 Now, to view the status of the fan (fan speed, CPU temperature), use the following command:
 ```
@@ -43,7 +41,6 @@ To toggle the fan on or off:
 ```
 fanctl toggle
 ```
-<br>
 
 ## Uninstall
 To uninstall the scripts, follow the given instructions:
