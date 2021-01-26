@@ -1,2 +1,12 @@
 # Pi Fan Control
-A small python script for controlling the speed of a cpu cooling fan connected to the Raspberry Pi through a PWM pin (through a transistor).
+These scripts have been tested on a fresh install of Raspberry Pi OS.
+<br>
+## Installation
+You need python3 and git installed on your system (Installed by default on the desktop version of Raspberry Pi OS).
+<br>
+```
+git clone https://github.com/aniansh19019/pi_fan_control
+cd pi_fan_control
+sudo chmod +x install.sh
+./install.sh
+```
