@@ -1,0 +1,14 @@
+[Unit]
+Description=Pi Fan Control Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/fan_control_script
+WorkingDirectory=/home/pi
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target
