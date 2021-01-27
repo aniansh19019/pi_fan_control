@@ -25,7 +25,7 @@ sudo chmod +x install.sh
 ```
 
 ## Usage
-After running the `install.sh` script, the files `fan_control_script` and `fanctl` will be moved to your `/usr/bin` folder and a systemd service is created which makes sure that the fan control script runs on system boot. You can modify the thresholds in the `fan_control_script` file if you feel.
+After running the `install.sh` script, the files `fan_control_script` and `fanctl` will be moved to your `/usr/bin` folder and a systemd service is created which makes sure that the fan control script runs on system boot. You can modify the thresholds in the `fan_control_script` file if you want.
 <br>
 <br>
 Now, to view the status of the fan (fan speed, CPU temperature), use the following command:
